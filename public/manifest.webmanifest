@@ -7,7 +7,7 @@
   "theme_color": "#000000",
   "description": "Guided breathing timer with box, 4-7-8, and custom patterns.",
   "icons": [
-    {"src": "/public/icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "/public/icon-512.png", "sizes": "512x512", "type": "image/png"}
+    {"src": "/favicon.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/favicon.png", "sizes": "512x512", "type": "image/png"}
   ]
 }
