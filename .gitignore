@@ -1,0 +1,32 @@
+# Node / dependencies
+node_modules/
+
+# Build outputs
+dist/style.css
+dist/*.map
+
+# Environment / local config
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / Editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Cache
+.cache/
+.wrangler/
+
+# Optional: remove if committing built CSS intentionally
+# !dist/style.css

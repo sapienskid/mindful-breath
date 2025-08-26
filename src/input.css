@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Global background enhancement */
+body { background-attachment: fixed; }
+body::before { 
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(56,189,248,0.12), transparent 60%), 
+    radial-gradient(circle at 15% 25%, rgba(99,102,241,0.14), transparent 55%);
+  mix-blend-mode: screen;
+}
+
+/* Improved ball shadow */
+#ball {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe-glow { animation: none; }
+  .fade-in { animation: none; opacity: 1; }
+}
