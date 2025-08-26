@@ -1,5 +1,5 @@
-// Improved service worker with immediate activation and network-first navigation handling
-const CACHE_NAME = 'mindful-breath-timer-v3';
+// Improved service worker with immediate activation and better caching strategy
+const CACHE_NAME = 'mindful-breath-timer-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,69 +8,114 @@ const ASSETS = [
   '/public/vendor/d3.min.js'
 ];
 
+// Install event - cache critical assets
 self.addEventListener('install', (event) => {
-  // Activate this worker immediately
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .catch(err => {
-        // If asset caching fails, still allow install to complete
-        console.warn('SW install: asset caching failed', err);
+      .then(cache => {
+        // Cache critical assets first
+        const criticalAssets = ['/', '/index.html', '/dist/style.css'];
+        return cache.addAll(criticalAssets)
+          .then(() => {
+            // Cache non-critical assets (like D3) separately
+            const nonCriticalAssets = ['/scripts/app.js', '/public/vendor/d3.min.js'];
+            return Promise.allSettled(
+              nonCriticalAssets.map(asset => 
+                fetch(asset).then(response => {
+                  if (response.ok) {
+                    return cache.put(asset, response);
+                  }
+                }).catch(() => console.log(`Failed to cache: ${asset}`))
+              )
+            );
+          });
       })
+      .catch(err => console.warn('SW install failed:', err))
   );
 });
 
+// Activate event - clean old caches and take control
 self.addEventListener('activate', (event) => {
-  // Take control of uncontrolled clients as soon as activated
   self.clients.claim();
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-    ))
+    caches.keys().then(keys => 
+      Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+           .map(key => caches.delete(key))
+      )
+    )
   );
 });
 
+// Fetch event - optimized caching strategy
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return; // only handle GET
-
+  if (event.request.method !== 'GET') return;
+  
   const request = event.request;
-
-  // Treat navigation requests with network-first strategy so users get latest HTML
-  if (request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html')) {
+  const url = new URL(request.url);
+  
+  // Handle navigation requests (HTML)
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
-      fetch(request)
+      // Try network first for HTML to get latest content
+      fetch(request, { cache: 'no-cache' })
         .then(response => {
-          // If we got a valid response, update the cache and return it
           if (response && response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(request, copy))
+              .catch(() => {});
           }
           return response;
         })
-        .catch(() => caches.match('/index.html')) // fallback to cached shell
+        .catch(() => {
+          // Fallback to cached HTML
+          return caches.match('/index.html');
+        })
     );
     return;
   }
-
-  // For other GET requests, use cache-first but update cache in the background
-  event.respondWith(
-    caches.match(request).then(cached => {
-      const networkFetch = fetch(request)
-        .then(response => {
-          // Only cache successful (status 200) responses from same-origin or CORS-allowed
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              try { cache.put(request, copy); } catch (e) { /* ignore put errors for opaque responses */ }
-            });
+  
+  // Handle static assets (CSS, JS, images)
+  if (url.pathname.includes('.css') || url.pathname.includes('.js') || url.pathname.includes('/public/')) {
+    event.respondWith(
+      // Cache first for static assets
+      caches.match(request)
+        .then(cached => {
+          if (cached) {
+            // Update cache in background
+            fetch(request)
+              .then(response => {
+                if (response && response.ok) {
+                  caches.open(CACHE_NAME)
+                    .then(cache => cache.put(request, response.clone()))
+                    .catch(() => {});
+                }
+              })
+              .catch(() => {});
+            return cached;
           }
-          return response;
+          
+          // Not in cache, fetch from network
+          return fetch(request)
+            .then(response => {
+              if (response && response.ok) {
+                const copy = response.clone();
+                caches.open(CACHE_NAME)
+                  .then(cache => cache.put(request, copy))
+                  .catch(() => {});
+              }
+              return response;
+            });
         })
-        .catch(() => null);
-
-      // Return cached response if present, otherwise wait for network
-      return cached || networkFetch;
-    })
+    );
+    return;
+  }
+  
+  // For other requests, just try network then cache
+  event.respondWith(
+    caches.match(request)
+      .then(cached => cached || fetch(request))
   );
 });
