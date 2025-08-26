@@ -1,5 +1,5 @@
 // Mindful Breath Timer Core Logic
-// Accessible, single-thread animation loop with requestAnimationFrame
+// Mobile-first, accessible, single-thread animation loop with requestAnimationFrame
 
 const state = {
   isRunning: false,
@@ -9,6 +9,8 @@ const state = {
   animationFrameId: null,
   timerIntervalId: null,
   pathLength: 0,
+  isInitialized: false,
+  resizeTimeout: null
 };
 
 const patterns = {
@@ -48,6 +50,7 @@ function cacheDom() {
   elements.mountainPath = qs('mountainPath');
   elements.mountainFill = qs('mountainFill');
   elements.animationSvg = qs('animationSvg');
+  elements.animationContainer = qs('animationContainer');
   elements.statusText = qs('statusText');
   elements.sessionTimer = qs('sessionTimer');
   elements.startStopBtn = qs('startStopBtn');
@@ -77,7 +80,7 @@ function getActivePattern() {
   return patterns[selected];
 }
 
-// Build a simple breathing-pattern-based mountain path using D3
+// Build a mobile-optimized breathing-pattern-based mountain path using D3
 function buildMountainPath() {
   if (typeof d3 === 'undefined') {
     console.warn('D3 is not loaded. Falling back to static path.');
@@ -94,11 +97,12 @@ function buildMountainPath() {
   const [inhale, hold1, exhale, hold2] = pattern.timings;
   const totalTime = inhale + hold1 + exhale + hold2;
   
-  // Create simple arc path based on breathing pattern
-  const startX = 20;
-  const endX = width - 20;
-  const baseY = height - 30;
-  const peakY = 40;
+  // Mobile-optimized dimensions with better margins
+  const isMobile = window.innerWidth <= 640; // sm breakpoint
+  const startX = isMobile ? 15 : 20;
+  const endX = width - (isMobile ? 15 : 20);
+  const baseY = height - (isMobile ? 25 : 30);
+  const peakY = isMobile ? 30 : 40;
   
   let points = [];
   
@@ -107,7 +111,7 @@ function buildMountainPath() {
     points = [[startX, baseY], [endX, baseY]];
   } else {
     // Create smooth arc that represents one complete breath cycle
-    const numPoints = 50; // Smooth curve with 50 points
+    const numPoints = isMobile ? 40 : 50; // Fewer points on mobile for performance
     
     for (let i = 0; i <= numPoints; i++) {
       const progress = i / numPoints; // 0 to 1
@@ -129,7 +133,7 @@ function buildMountainPath() {
         accumulatedTime += pattern.timings[p];
       }
       
-      // Calculate Y position based on phase
+      // Calculate Y position based on phase with mobile-optimized curves
       let y = baseY;
       
       if (currentPhase === 0) {
@@ -137,13 +141,15 @@ function buildMountainPath() {
         y = baseY - (baseY - peakY) * easeInOutQuad(phaseProgress);
       } else if (currentPhase === 1) {
         // Hold at top: stay at peak with slight variation
-        y = peakY + Math.sin(phaseProgress * Math.PI * 4) * 2;
+        const variation = isMobile ? 1 : 2;
+        y = peakY + Math.sin(phaseProgress * Math.PI * 4) * variation;
       } else if (currentPhase === 2) {
         // Exhale: descend smoothly
         y = peakY + (baseY - peakY) * easeInOutQuad(phaseProgress);
       } else {
         // Hold at bottom: stay at base with slight variation
-        y = baseY + Math.sin(phaseProgress * Math.PI * 3) * 1;
+        const variation = isMobile ? 0.5 : 1;
+        y = baseY + Math.sin(phaseProgress * Math.PI * 3) * variation;
       }
       
       points.push([x, y]);
@@ -155,11 +161,11 @@ function buildMountainPath() {
     points = [[startX, baseY], [endX, baseY]];
   }
 
-  // Generate smooth path using d3.line
+  // Generate smooth path using d3.line with mobile-optimized curve tension
   const line = d3.line()
     .x(d => d[0])
     .y(d => d[1])
-    .curve(d3.curveCardinal);
+    .curve(d3.curveCardinal.tension(isMobile ? 0.3 : 0.5));
 
   // Create path for stroke
   const pathData = line(points);
@@ -168,15 +174,15 @@ function buildMountainPath() {
   // Create filled mountain shape
   if (elements.mountainFill) {
     const fillPoints = [
-      [0, height - 5],
+      [0, height],
       ...points,
-      [width, height - 5],
-      [0, height - 5]
+      [width, height],
+      [0, height]
     ];
     const fillPath = d3.line()
       .x(d => d[0])
       .y(d => d[1])
-      .curve(d3.curveCardinal)(fillPoints);
+      .curve(d3.curveCardinal.tension(isMobile ? 0.3 : 0.5))(fillPoints);
     elements.mountainFill.setAttribute('d', fillPath);
   }
 
@@ -194,9 +200,9 @@ function easeInOutQuad(x) {
   return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
-// Simplified ball positioning using SVG coordinates directly
+// Mobile-optimized ball positioning using precise SVG coordinates
 function updateBallPosition(progress) {
-  if (!state.pathLength || !elements.mountainPath) {
+  if (!state.pathLength || !elements.mountainPath || !elements.animationContainer) {
     return;
   }
 
@@ -204,29 +210,37 @@ function updateBallPosition(progress) {
     // Get point along the path (progress is 0 to 1)
     const pathPoint = elements.mountainPath.getPointAtLength(progress * state.pathLength);
     
+    // Get container bounding rect for precise positioning
+    const containerRect = elements.animationContainer.getBoundingClientRect();
+    const svgRect = elements.animationSvg.getBoundingClientRect();
+    
     // Get SVG viewBox dimensions
     const viewBox = elements.animationSvg.viewBox.baseVal;
     const viewBoxWidth = viewBox.width;
     const viewBoxHeight = viewBox.height;
     
-    // Get actual SVG element dimensions
-    const svgRect = elements.animationSvg.getBoundingClientRect();
-    
-    // Calculate scale factors
+    // Calculate scale factors (SVG coordinates to actual pixel coordinates)
     const scaleX = svgRect.width / viewBoxWidth;
     const scaleY = svgRect.height / viewBoxHeight;
     
-    // Convert SVG coordinates to actual pixel coordinates
+    // Convert SVG coordinates to container-relative pixel coordinates
     const pixelX = pathPoint.x * scaleX;
     const pixelY = pathPoint.y * scaleY;
     
-    // Position ball (centered on the point)
+    // Position ball relative to the container
     elements.ball.style.left = `${pixelX}px`;
     elements.ball.style.top = `${pixelY}px`;
     elements.ball.style.transform = 'translate(-50%, -50%)';
     
+    // Ensure ball is visible
+    elements.ball.style.display = 'block';
+    
   } catch (e) {
     console.warn('Failed to position ball:', e);
+    // Fallback positioning
+    elements.ball.style.left = '50%';
+    elements.ball.style.top = '75%';
+    elements.ball.style.transform = 'translate(-50%, -50%)';
   }
 }
 
@@ -236,7 +250,7 @@ function updateStatusText(text) {
     setTimeout(() => {
       elements.statusText.innerText = text;
       elements.statusText.classList.remove('opacity-0');
-    }, 180);
+    }, 150); // Faster transition on mobile
   }
 }
 
@@ -333,31 +347,41 @@ function summarizeSession() {
   const elapsedSeconds = Math.floor((Date.now() - state.sessionStartTime) / 1000);
   if (elapsedSeconds < 5) return; // ignore very short sessions
   const minutes = (elapsedSeconds / 60).toFixed(1);
-  elements.sessionSummary.textContent = `Completed ${minutes} min session (${elapsedSeconds}s). Great job maintaining focus.`;
+  elements.sessionSummary.textContent = `Completed ${minutes} min session. Great job maintaining focus.`;
 }
 
 function handleStartStopClick() {
   state.isRunning ? stop() : start();
 }
 
+// Optimized resize handler with debouncing for mobile
 function handleResize() {
-  buildMountainPath();
-  // Update ball position immediately after path rebuild
-  if (state.isRunning) {
-    const pattern = getActivePattern();
-    const totalTime = pattern.timings.reduce((sum, time) => sum + time, 0);
-    if (totalTime > 0) {
-      let elapsedPhaseTime = 0;
-      for (let i = 0; i < state.currentPhaseIndex; i++) {
-        elapsedPhaseTime += pattern.timings[i];
-      }
-      elapsedPhaseTime += state.timeInPhase;
-      const totalProgress = Math.min(elapsedPhaseTime / totalTime, 1);
-      updateBallPosition(totalProgress);
-    }
-  } else {
-    updateBallPosition(0);
+  // Clear existing timeout
+  if (state.resizeTimeout) {
+    clearTimeout(state.resizeTimeout);
   }
+  
+  // Debounce resize events (important for mobile orientation changes)
+  state.resizeTimeout = setTimeout(() => {
+    buildMountainPath();
+    
+    // Update ball position immediately after path rebuild
+    if (state.isRunning) {
+      const pattern = getActivePattern();
+      const totalTime = pattern.timings.reduce((sum, time) => sum + time, 0);
+      if (totalTime > 0) {
+        let elapsedPhaseTime = 0;
+        for (let i = 0; i < state.currentPhaseIndex; i++) {
+          elapsedPhaseTime += pattern.timings[i];
+        }
+        elapsedPhaseTime += state.timeInPhase;
+        const totalProgress = Math.min(elapsedPhaseTime / totalTime, 1);
+        updateBallPosition(totalProgress);
+      }
+    } else {
+      updateBallPosition(0);
+    }
+  }, 100); // 100ms debounce
 }
 
 function handlePatternChange() {
@@ -372,8 +396,10 @@ function handlePatternChange() {
   elements.sessionTimer.textContent = '00:00';
   resetState();
   // Rebuild mountain path when pattern changes
-  buildMountainPath();
-  updateBallPosition(0);
+  setTimeout(() => {
+    buildMountainPath();
+    updateBallPosition(0);
+  }, 50);
 }
 
 function shareSession() {
@@ -407,12 +433,15 @@ function fallbackShare(text, url) {
   // Create a temporary input to copy the text
   const textarea = document.createElement('textarea');
   textarea.value = `${text}\n${url}`;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
   document.body.appendChild(textarea);
   textarea.select();
+  textarea.setSelectionRange(0, 99999); // For mobile devices
   
   try {
     document.execCommand('copy');
-    // Just show a simple non-scary message
+    // Show feedback message
     const messageEl = elements.sessionSummary;
     const originalText = messageEl.textContent;
     messageEl.textContent = 'Share link copied!';
@@ -425,16 +454,30 @@ function fallbackShare(text, url) {
     }, 2000);
   } catch (err) {
     console.error('Failed to copy: ', err);
+    // Fallback for mobile browsers that don't support copy
+    const messageEl = elements.sessionSummary;
+    const originalText = messageEl.textContent;
+    messageEl.textContent = 'Share not supported on this device';
+    messageEl.style.color = '#f59e0b'; // amber-400
+    
+    setTimeout(() => {
+      messageEl.textContent = originalText;
+      messageEl.style.color = '';
+    }, 2000);
   }
   
   document.body.removeChild(textarea);
 }
 
+// Mobile-optimized initialization
 function init() {
   cacheDom();
   
   // Set year in footer
-  document.getElementById('year').textContent = new Date().getFullYear();
+  const yearElement = document.getElementById('year');
+  if (yearElement) {
+    yearElement.textContent = new Date().getFullYear();
+  }
   
   // Register service worker for offline & caching
   if ('serviceWorker' in navigator) {
@@ -443,6 +486,7 @@ function init() {
     });
   }
   
+  // Initialize mountain path after a short delay to ensure DOM is ready
   setTimeout(() => {
     buildMountainPath();
     try {
@@ -451,15 +495,44 @@ function init() {
       state.pathLength = 0;
     }
     updateBallPosition(0);
-  }, 120);
+    state.isInitialized = true;
+  }, 200); // Slightly longer delay for mobile devices
   
+  // Event listeners
   elements.startStopBtn.addEventListener('click', handleStartStopClick);
   elements.patternSelect.addEventListener('change', handlePatternChange);
   elements.shareBtn.addEventListener('click', shareSession);
+  
+  // Initialize pattern selection
   handlePatternChange();
   
-  // Use the new resize handler
-  window.addEventListener('resize', handleResize);
+  // Optimized resize handler with passive listening
+  window.addEventListener('resize', handleResize, { passive: true });
+  
+  // Handle orientation change on mobile devices
+  window.addEventListener('orientationchange', () => {
+    setTimeout(handleResize, 300); // Delay to allow orientation change to complete
+  });
+  
+  // Prevent zoom on double tap for better mobile UX
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (event) => {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, false);
+  
+  // Add touch-friendly focus handling
+  document.addEventListener('touchstart', () => {
+    document.body.classList.add('touch-device');
+  }, { once: true });
 }
 
-window.addEventListener('load', init);
+// Enhanced DOM ready detection for mobile
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
