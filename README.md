@@ -1,141 +1,44 @@
 # Mindful Breath Timer
 
-Free, single‑page, accessible breathing timer with a visual mountain path animation. Supports Box Breathing, 4‑7‑8, and fully custom cycles. Built with Tailwind CSS v4 (local build, no CDN) and ready for Cloudflare Pages.
+A tiny, accessible single‑page breathing timer with a visual mountain animation. Presets (Box, 4‑7‑8) plus custom cycles, mobile‑first and PWA‑ready. Built with plain JavaScript and local Tailwind CSS.
 
-## Features
-- Visual animation tracking inhale / hold / exhale on a mountain arc
-- Preset patterns: Box (4-4-4-4), 4-7-8 Relaxing Breath
-- Custom pattern inputs (inhale, first hold, exhale, second hold)
-- Session timer + auto summary after completion
-- Share button (Web Share API) where supported
-- Mobile-first responsive layout
-- SEO optimized (meta, Open Graph, Twitter, sitemap, robots, structured data)
-- PWA basics: manifest, icons, theme color
+## Quick start
 
-## Tech Stack
-- Tailwind CSS v4 (local build via CLI)
-- Zero runtime frameworks (vanilla JS)
+1. Install dependencies and run the Tailwind watcher:
 
-## Project Structure
-```
-index.html                # Main SPA
-scripts/app.js            # Core logic
-src/input.css             # Tailwind source (scan + layers)
-tailwind.config.js        # Tailwind config
-package.json              # Build scripts / dev deps
-dist/style.css            # Generated (build output)
-public/manifest.webmanifest
-public/icon.svg           # Fallback / vector icon
-public/robots.txt
-public/sitemap.xml
-favicon.png               # (Place this in project root for browser tab icon)
-```
+   npm install
+   npm run dev
 
-## Development
-Install dependencies and run the Tailwind watcher:
+2. Build for production:
 
-```bash
-npm install
-npm run dev
-```
-Open `index.html` in a local server (e.g. using VS Code Live Server or a simple Python/Node static server).
+   npm run build
 
-## Production Build
-```bash
-npm run build
-```
-Outputs `dist/style.css` (minified) for deployment.
+Open `index.html` with a static server (VS Code Live Server, `python -m http.server`, etc.).
 
-## Cloudflare Pages Deployment (Complete Guide)
+## Key features
 
-### A. One‑Click (Recommended)
-1. Commit everything (including `package.json`, `tailwind.config.js`, `src/`, and `dist/` optional).
-2. Push to GitHub / GitLab.
-3. In Cloudflare Dashboard: Pages → Create Project → Connect to your repo.
-4. Configure build:
-   - Framework preset: None
-   - Build command: `npm run build`
-   - Build output directory: `.`
-   - Root directory: (leave empty)
-5. Add Environment Variable (optional): `NODE_VERSION` = your current Node (e.g. `18.20.3`).
-6. Deploy. Cloudflare runs the build, generates `dist/style.css`, serves `index.html`.
-7. Add custom domain (Pages → Custom domains). Ensure it propagates + HTTPS active.
+- Visual inhale/hold/exhale animation
+- Preset and custom breathing cycles
+- Session timer + summary
+- Web Share API support where available
+- Mobile-first, accessible (prefers-reduced-motion, semantic markup)
 
-### B. Pre-Built (No build on Cloudflare)
-If you want to avoid a build step:
-```bash
-npm install
-npm run build
-git add dist/style.css
-git commit -m "Add built CSS"
-git push
-```
-Then in Pages set:
- - Build command: (leave empty)
- - Output directory: `.`
-Cloudflare will just serve existing files.
+## Tech
 
-### C. Drag & Drop (Fast test)
-1. Run `npm run build` locally.
-2. Ensure `dist/style.css` exists.
-3. Zip project or select folder → Pages → Upload.
+- Vanilla JavaScript
+- Tailwind CSS (local build)
+- Minimal PWA meta + manifest
 
-### D. Local Preview (Optional)
-Add Wrangler later:
-```bash
-npm i -D wrangler
-npx wrangler pages dev .
-```
+## Important files
 
-### Domain & Caching Tips
-- Replace all `https://your-domain.example/` placeholders in `index.html`, `robots.txt`, `sitemap.xml` with your real domain before final deploy.
-- After deploy, purge cache (Pages → Purge) if CSS changes aren’t visible.
-- Set correct canonical URL to avoid duplicate SEO signals.
+- `index.html` — main SPA
+- `scripts/app.js` — app logic
+- `src/input.css` & `tailwind.config.js` — Tailwind source/config
+- `dist/style.css` — generated (build output)
+- `public/manifest.webmanifest`, icons — PWA
 
-## Files NOT strictly required for Cloudflare Pages runtime
-You can delete these if you prefer minimal footprint (only if you understand the trade-offs):
-- `public/sitemap.xml` (but recommended for SEO)
-- `public/robots.txt` (Pages will still be crawled; keep if you want explicit control)
-- `public/icon.svg` (if you only use `favicon.png`)
-- `public/manifest.webmanifest` (remove if you don’t care about PWA installability)
-- `LICENSE` (keep if open sourcing under MIT; add one if absent)
-- `dist/style.css` (if you rely on Cloudflare build step to regenerate it) 
+## Deploy
 
-Keep these ALWAYS:
-- `index.html`, `scripts/app.js`, `src/input.css`, `tailwind.config.js`, `package.json`
+Works on static hosts. For Cloudflare Pages: add the repo, set build command `npm run build` (or pre-build and commit `dist/style.css`) and publish.
 
-## Favicon
-Place your `favicon.png` in the project root. Already referenced in `<head>` of `index.html` as:
-```html
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-```
-Update sizes or add additional favicon sizes if needed.
-
-## Optional: Wrangler Preview (if you add it later)
-You can add `wrangler` for local preview:
-```bash
-npm install -D wrangler
-npx wrangler pages dev .
-```
-_Not installed by default to keep dependencies minimal._
-
-## Accessibility
-- High contrast dark theme
-- Motion reduced when user sets `prefers-reduced-motion`
-- Semantic headings and labels
-
-## SEO Checklist Included
-- Canonical link
-- Meta description + keywords
-- Open Graph + Twitter card
-- Structured data (WebApplication)
-- Sitemap + robots.txt
-
-## Customization
-Edit `tailwind.config.js` to extend theme or add utilities. Put additional component styles in `@layer components` inside `src/input.css`.
-
-## License
-MIT (you can add a `LICENSE` file; if absent, clarify usage policy.)
-
----
-Made to encourage calm, focus, and mindful breaks. Free to use.
+Made to help short, calm breathing breaks. Contributions welcome.

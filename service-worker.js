@@ -1,5 +1,5 @@
 // Basic service worker for offline caching
-const CACHE_NAME = 'mindful-breath-timer-v1';
+const CACHE_NAME = 'mindful-breath-timer-v2';
 const ASSETS = [
   '/',
   '/index.html',
