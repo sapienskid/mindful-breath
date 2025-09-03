@@ -38,8 +38,13 @@ export default {
         '.btn-primary': {
           '@apply px-8 py-3 rounded-full font-semibold text-lg bg-white text-black hover:bg-white/90 active:scale-95 transition duration-150': {}
         },
-        '.number-input': {
-          '@apply w-full bg-slate-800/80 border border-slate-600 rounded-md p-2 text-center text-white focus:outline-none focus:ring-2 focus:ring-white/70 focus:border-white/70 transition': {}
+        '.focus-ring': {
+          '@apply focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400/70': {}
+        },
+        '.dropdown-option': {
+          '@apply bg-slate-800 text-slate-100 py-2 px-3': {},
+          'background-color': 'rgb(30 41 59) !important',
+          'color': 'rgb(241 245 249) !important'
         },
         '.content-section': {
           '@apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-xl px-6 sm:px-10 py-10 space-y-10': {}

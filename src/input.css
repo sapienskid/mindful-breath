@@ -18,7 +18,98 @@ body::before {
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
 }
 
+/* Enhanced Custom Number Input Styling */
+.custom-number-input {
+  @apply relative w-full bg-gradient-to-br from-slate-900/90 to-slate-800/90 
+         border border-slate-600/80 rounded-lg text-center text-white text-sm sm:text-base
+         p-3 sm:p-3.5 font-medium tracking-wide
+         focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400/70 
+         hover:border-slate-500/90 hover:bg-slate-800/95
+         transition-all duration-200 shadow-lg backdrop-blur-sm
+         selection:bg-indigo-400/30;
+}
+
+.custom-number-input::-webkit-outer-spin-button,
+.custom-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.custom-number-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.custom-number-input::placeholder {
+  @apply text-slate-400;
+}
+
+.custom-number-input:focus {
+  @apply shadow-lg shadow-indigo-500/20;
+}
+
+.custom-number-input:hover:not(:focus) {
+  @apply shadow-md shadow-slate-500/10;
+}
+
+/* Add subtle pulse animation for better UX */
+.custom-number-input:focus {
+  animation: input-glow 2s ease-in-out infinite;
+}
+
+@keyframes input-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.5), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Audio Controls Styling */
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem; /* 20px */
+  width: 2.25rem; /* 36px */
+  border-radius: 9999px;
+  background-color: #475569; /* slate-600 */
+  transition: background-color 0.2s ease-in-out;
+  outline: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-switch:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.toggle-switch.active {
+  background-color: #4f46e5; /* indigo-600 */
+}
+
+.toggle-thumb {
+  display: inline-block;
+  height: 0.75rem; /* 12px */
+  width: 0.75rem; /* 12px */
+  border-radius: 50%;
+  background-color: #ffffff;
+  transform: translateX(0.25rem); /* 4px */
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.toggle-switch.active .toggle-thumb {
+  transform: translateX(1rem); /* 16px */
+}
+
 @media (prefers-reduced-motion: reduce) {
   .breathe-glow { animation: none; }
   .fade-in { animation: none; opacity: 1; }
+  .custom-number-input { transition: none; }
+  .custom-number-input:focus { animation: none; }
 }
+
+/* Remove duplicate breathing animation */
