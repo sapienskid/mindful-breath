@@ -42,7 +42,8 @@ const state = {
   isWhiteNoiseEnabled: false,
   isSoundEnabled: true,
   noiseVolume: CONFIG.WHITE_NOISE_VOLUME,
-  bellVolume: CONFIG.VOLUME_LEVEL
+  bellVolume: CONFIG.VOLUME_LEVEL,
+  currentTheme: 'cosmic'
 };
 
 const patterns = {
@@ -110,6 +111,18 @@ const utils = {
       element.textContent = originalText;
       element.style.color = originalColor;
     }, timeout);
+  },
+  // Simplified theme management
+  saveTheme: (theme) => {
+    try { localStorage.setItem('mindful-breath-theme', theme); } catch (e) { /* silent fail */ }
+  },
+  loadTheme: () => {
+    try { return localStorage.getItem('mindful-breath-theme') || 'cosmic'; } catch (e) { return 'cosmic'; }
+  },
+  applyTheme: (theme) => {
+    document.body.setAttribute('data-theme', theme);
+    state.currentTheme = theme;
+    utils.saveTheme(theme);
   }
 };
 
@@ -230,7 +243,7 @@ const domUtils = {
     // Set color scheme for better option visibility
     elements.patternSelect.style.colorScheme = 'dark';
     
-    // Clear existing options
+    // Clear and populate pattern options
     elements.patternSelect.innerHTML = '';
     
     // Add pattern options
@@ -238,23 +251,14 @@ const domUtils = {
       const option = document.createElement('option');
       option.value = key;
       option.textContent = pattern.displayName;
-      option.style.backgroundColor = 'rgb(30 41 59)'; // slate-800
-      option.style.color = 'rgb(241 245 249)'; // slate-100
-      option.style.padding = '0.5rem';
       elements.patternSelect.appendChild(option);
     });
     
-    // Add custom option at the end
+    // Add custom option
     const customOption = document.createElement('option');
     customOption.value = 'custom';
     customOption.textContent = 'Custom Pattern';
-    customOption.style.backgroundColor = 'rgb(30 41 59)'; // slate-800
-    customOption.style.color = 'rgb(241 245 249)'; // slate-100
-    customOption.style.padding = '0.5rem';
     elements.patternSelect.appendChild(customOption);
-    
-    // Set default selection to first pattern
-    elements.patternSelect.selectedIndex = 0;
   }
 };
 
@@ -263,7 +267,7 @@ function cacheDom() {
     'ball', 'mountainPath', 'mountainFill', 'animationSvg', 'animationContainer',
     'statusText', 'sessionTimer', 'startStopBtn', 'patternSelect', 'customInputs',
     'customInhale', 'customHold1', 'customExhale', 'customHold2', 'sessionSummary',
-    'shareBtn', 'soundToggle', 'whiteNoiseToggle', 'noiseType',
+    'shareBtn', 'soundToggle', 'whiteNoiseToggle', 'noiseType', 'themeSelect',
     'bellVolume', 'noiseVolume', 'bellVolumeValue', 'noiseVolumeValue',
     'noiseControls', 'noiseVolumeControl'
   ];
@@ -602,42 +606,29 @@ function toggleSound() {
 // Enhanced audio control functions
 function updateBellVolume() {
   state.bellVolume = parseFloat(elements.bellVolume.value);
-  if (elements.bellVolumeValue) {
-    elements.bellVolumeValue.textContent = Math.round(state.bellVolume * 100) + '%';
-  }
+  if (elements.bellVolumeValue) elements.bellVolumeValue.textContent = Math.round(state.bellVolume * 100) + '%';
 }
 
 function updateNoiseVolume() {
   state.noiseVolume = parseFloat(elements.noiseVolume.value);
-  if (elements.noiseVolumeValue) {
-    elements.noiseVolumeValue.textContent = Math.round(state.noiseVolume * 200) + '%';
-  }
-  // Update the actual noise gain if noise is enabled
-  if (state.isWhiteNoiseEnabled) {
-    updateNoiseGains();
-  }
+  if (elements.noiseVolumeValue) elements.noiseVolumeValue.textContent = Math.round(state.noiseVolume * 200) + '%';
+  if (state.isWhiteNoiseEnabled) updateNoiseGains();
 }
 
 function updateNoiseType() {
   state.currentNoiseType = elements.noiseType.value;
-  if (state.isWhiteNoiseEnabled) {
-    updateNoiseGains();
-  }
+  if (state.isWhiteNoiseEnabled) updateNoiseGains();
+}
+
+function updateTheme() {
+  const selectedTheme = elements.themeSelect.value;
+  utils.applyTheme(selectedTheme);
 }
 
 function updateNoiseControlsVisibility() {
-  const noiseControls = elements.noiseControls;
-  const noiseVolumeControl = elements.noiseVolumeControl;
-  
-  if (noiseControls && noiseVolumeControl) {
-    if (state.isWhiteNoiseEnabled) {
-      noiseControls.style.display = 'block';
-      noiseVolumeControl.style.display = 'block';
-    } else {
-      noiseControls.style.display = 'none';
-      noiseVolumeControl.style.display = 'none';
-    }
-  }
+  const display = state.isWhiteNoiseEnabled ? 'block' : 'none';
+  if (elements.noiseControls) elements.noiseControls.style.display = display;
+  if (elements.noiseVolumeControl) elements.noiseVolumeControl.style.display = display;
 }
 
 function setupAudioEventListeners() {
@@ -654,6 +645,9 @@ function setupAudioEventListeners() {
   // Noise controls
   elements.noiseType?.addEventListener('change', updateNoiseType);
   elements.noiseVolume?.addEventListener('input', updateNoiseVolume);
+  
+  // Theme controls
+  elements.themeSelect?.addEventListener('change', updateTheme);
   
   // Initialize volume displays
   if (elements.bellVolumeValue) {
@@ -803,6 +797,12 @@ function stop() {
   if (state.brownNoiseGain && state.audioContext) {
     audioUtils.setGainValue(state.brownNoiseGain, 0, 0.2);
   }
+  
+  // Reset timer display
+  elements.sessionTimer.textContent = '00:00';
+  
+  // Reset state
+  resetState();
   
   updateStatusText('Select a pattern');
   updateBallPosition(0);
@@ -962,6 +962,11 @@ function init() {
   
   // Initialize audio control states
   updateNoiseControlsVisibility();
+  
+  // Initialize theme system
+  const savedTheme = utils.loadTheme();
+  utils.applyTheme(savedTheme);
+  if (elements.themeSelect) elements.themeSelect.value = savedTheme;
   
   // Initialize pattern selection
   handlePatternChange();
