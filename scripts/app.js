@@ -4,10 +4,13 @@
 // Configuration constants
 const CONFIG = {
   MOBILE_BREAKPOINT: 640,
-  VOLUME_LEVEL: 0.5,
-  WHITE_NOISE_VOLUME: 0.03,
-  BELL_FREQUENCY: 800,
-  BELL_DURATION: 0.8,
+  VOLUME_LEVEL: 0.7,
+  WHITE_NOISE_VOLUME: 0.2,
+  PINK_NOISE_VOLUME: 0.15,
+  BROWN_NOISE_VOLUME: 0.18,
+  BELL_FREQUENCY: 69, // Deep (69 Hz) for calming effect
+  // BELL_FREQUENCY: 276, // Traditional Tibetan frequency
+  BELL_DURATION: 3.0,
   RESIZE_DEBOUNCE: 100,
   TRANSITION_DELAY: 150,
   INIT_DELAY: 200,
@@ -29,9 +32,17 @@ const state = {
   lastPhaseIndex: -1,
   audioContext: null,
   whiteNoiseNode: null,
+  pinkNoiseNode: null,
+  brownNoiseNode: null,
   whiteNoiseGain: null,
+  pinkNoiseGain: null,
+  brownNoiseGain: null,
+  noiseBuffers: {},
+  currentNoiseType: 'white',
   isWhiteNoiseEnabled: false,
-  isSoundEnabled: true
+  isSoundEnabled: true,
+  noiseVolume: CONFIG.WHITE_NOISE_VOLUME,
+  bellVolume: CONFIG.VOLUME_LEVEL
 };
 
 const patterns = {
@@ -104,7 +115,7 @@ const utils = {
 
 const elements = {};
 
-// Audio utilities
+// Enhanced Audio utilities
 const audioUtils = {
   resumeContext: async () => {
     if (state.audioContext?.state === 'suspended') {
@@ -122,6 +133,72 @@ const audioUtils = {
     gainNode.gain.cancelScheduledValues(currentTime);
     gainNode.gain.setValueAtTime(gainNode.gain.value, currentTime);
     gainNode.gain.linearRampToValueAtTime(value, currentTime + rampTime);
+  },
+
+  generateNoiseBuffers: () => {
+    if (!state.audioContext) return;
+    
+    const bufferSize = state.audioContext.sampleRate * 2; // 2 seconds
+    
+    // White noise buffer
+    const whiteBuffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
+    const whiteData = whiteBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      whiteData[i] = Math.random() * 2 - 1;
+    }
+    state.noiseBuffers.white = whiteBuffer;
+
+    // Pink noise buffer (1/f noise)
+    const pinkBuffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
+    const pinkData = pinkBuffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      pinkData[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+      b6 = white * 0.115926;
+    }
+    state.noiseBuffers.pink = pinkBuffer;
+
+    // Brown noise buffer (integrated white noise)
+    const brownBuffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
+    const brownData = brownBuffer.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      brownData[i] = (lastOut + (0.02 * white)) / 1.02;
+      lastOut = brownData[i];
+      brownData[i] *= 3.5;
+    }
+    state.noiseBuffers.brown = brownBuffer;
+  },
+
+  createNoiseSource: (type) => {
+    if (!state.audioContext || !state.noiseBuffers[type]) return null;
+    
+    const source = state.audioContext.createBufferSource();
+    const gain = state.audioContext.createGain();
+    
+    source.buffer = state.noiseBuffers[type];
+    source.loop = true;
+    
+    // Set volume based on noise type
+    const volumes = {
+      white: CONFIG.WHITE_NOISE_VOLUME,
+      pink: CONFIG.PINK_NOISE_VOLUME,
+      brown: CONFIG.BROWN_NOISE_VOLUME
+    };
+    gain.gain.value = state.isWhiteNoiseEnabled ? (volumes[type] * state.noiseVolume) : 0;
+    
+    source.connect(gain);
+    gain.connect(state.audioContext.destination);
+    
+    return { source, gain };
   }
 };
 
@@ -186,7 +263,9 @@ function cacheDom() {
     'ball', 'mountainPath', 'mountainFill', 'animationSvg', 'animationContainer',
     'statusText', 'sessionTimer', 'startStopBtn', 'patternSelect', 'customInputs',
     'customInhale', 'customHold1', 'customExhale', 'customHold2', 'sessionSummary',
-    'shareBtn', 'soundToggle', 'whiteNoiseToggle'
+    'shareBtn', 'soundToggle', 'whiteNoiseToggle', 'noiseType',
+    'bellVolume', 'noiseVolume', 'bellVolumeValue', 'noiseVolumeValue',
+    'noiseControls', 'noiseVolumeControl'
   ];
   
   elementIds.forEach(id => {
@@ -343,45 +422,49 @@ function easeInOutQuad(x) {
   return utils.easeInOutQuad(x);
 }
 
-// Audio System - Web Audio API for generated sounds
+// Enhanced Audio System - Web Audio API for generated sounds
 function initAudioContext() {
   if (state.audioContext) return;
   
   try {
     state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    createWhiteNoise();
+    audioUtils.generateNoiseBuffers();
+    createAllNoiseSources();
   } catch (error) {
     console.warn('Web Audio API not supported:', error);
     state.audioContext = null;
   }
 }
 
-function createWhiteNoise() {
+function createAllNoiseSources() {
   if (!state.audioContext) return;
   
   try {
-    const bufferSize = state.audioContext.sampleRate * 2;
-    const buffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
-    const output = buffer.getChannelData(0);
-    
-    // Generate white noise
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
+    // Create white noise
+    const whiteNoise = audioUtils.createNoiseSource('white');
+    if (whiteNoise) {
+      state.whiteNoiseNode = whiteNoise.source;
+      state.whiteNoiseGain = whiteNoise.gain;
+      state.whiteNoiseNode.start();
     }
-    
-    // Create and connect nodes
-    state.whiteNoiseNode = state.audioContext.createBufferSource();
-    state.whiteNoiseNode.buffer = buffer;
-    state.whiteNoiseNode.loop = true;
-    
-    state.whiteNoiseGain = state.audioContext.createGain();
-    state.whiteNoiseGain.gain.value = 0;
-    
-    state.whiteNoiseNode.connect(state.whiteNoiseGain);
-    state.whiteNoiseGain.connect(state.audioContext.destination);
-    state.whiteNoiseNode.start();
+
+    // Create pink noise
+    const pinkNoise = audioUtils.createNoiseSource('pink');
+    if (pinkNoise) {
+      state.pinkNoiseNode = pinkNoise.source;
+      state.pinkNoiseGain = pinkNoise.gain;
+      state.pinkNoiseNode.start();
+    }
+
+    // Create brown noise
+    const brownNoise = audioUtils.createNoiseSource('brown');
+    if (brownNoise) {
+      state.brownNoiseNode = brownNoise.source;
+      state.brownNoiseGain = brownNoise.gain;
+      state.brownNoiseNode.start();
+    }
   } catch (error) {
-    console.warn('Failed to create white noise:', error);
+    console.warn('Failed to create noise sources:', error);
   }
 }
 
@@ -392,43 +475,46 @@ function playBellSound(frequency = CONFIG.BELL_FREQUENCY, duration = CONFIG.BELL
     audioUtils.resumeContext();
     const now = state.audioContext.currentTime;
 
-    // Bell harmonic frequencies and amplitudes
+    // Enhanced Tibetan bell harmonics based on traditional frequencies
     const harmonics = [
-      { freq: frequency, amp: 0.4 },
-      { freq: frequency * 2.76, amp: 0.3 },
-      { freq: frequency * 5.4, amp: 0.15 },
-      { freq: frequency * 8.93, amp: 0.08 },
-      { freq: frequency * 1.5, amp: 0.2 }
+      { freq: frequency, amp: 0.5, type: 'sine' },
+      { freq: frequency * 2.76, amp: 0.35, type: 'triangle' },
+      { freq: frequency * 5.4, amp: 0.2, type: 'sine' },
+      { freq: frequency * 8.93, amp: 0.12, type: 'triangle' },
+      { freq: frequency * 1.5, amp: 0.25, type: 'sine' },
+      { freq: frequency * 0.5, amp: 0.15, type: 'sine' } // Sub-harmonic for depth
     ];
 
     harmonics.forEach((harmonic, index) => {
       const oscillator = state.audioContext.createOscillator();
       const gainNode = state.audioContext.createGain();
       
-      oscillator.type = index === 0 ? 'sine' : 'triangle';
+      oscillator.type = harmonic.type;
       oscillator.frequency.setValueAtTime(harmonic.freq, now);
 
-      // Bell envelope
-      const volume = harmonic.amp * CONFIG.VOLUME_LEVEL;
+      // Enhanced bell envelope for more authentic Tibetan bell sound
+      const volume = harmonic.amp * state.bellVolume;
       gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(volume, now + 0.005);
-      gainNode.gain.exponentialRampToValueAtTime(volume * 0.1, now + 0.1);
+      gainNode.gain.linearRampToValueAtTime(volume, now + 0.008); // Faster attack
+      gainNode.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(volume * 0.3, now + 0.2);
+      gainNode.gain.exponentialRampToValueAtTime(volume * 0.1, now + 0.8);
       gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-      // Add modulation for fundamental frequency
+      // Add subtle vibrato for fundamental frequency
       if (index === 0) {
-        const modOscillator = state.audioContext.createOscillator();
-        const modGain = state.audioContext.createGain();
+        const lfo = state.audioContext.createOscillator();
+        const lfoGain = state.audioContext.createGain();
         
-        modOscillator.frequency.setValueAtTime(5, now);
-        modOscillator.type = 'sine';
-        modGain.gain.setValueAtTime(2, now);
+        lfo.frequency.setValueAtTime(4.5, now); // Slight vibrato
+        lfo.type = 'sine';
+        lfoGain.gain.setValueAtTime(1.2, now);
         
-        modOscillator.connect(modGain);
-        modGain.connect(oscillator.frequency);
+        lfo.connect(lfoGain);
+        lfoGain.connect(oscillator.frequency);
         
-        modOscillator.start(now);
-        modOscillator.stop(now + duration);
+        lfo.start(now);
+        lfo.stop(now + duration);
       }
 
       oscillator.connect(gainNode);
@@ -436,6 +522,13 @@ function playBellSound(frequency = CONFIG.BELL_FREQUENCY, duration = CONFIG.BELL
       oscillator.start(now);
       oscillator.stop(now + duration);
     });
+
+    // Add bell visual feedback if element exists
+    const bellElement = document.querySelector('.bell-visual, #bellIcon');
+    if (bellElement) {
+      bellElement.classList.add('ringing');
+      setTimeout(() => bellElement.classList.remove('ringing'), 500);
+    }
   } catch (error) {
     console.warn('Failed to play bell sound:', error);
   }
@@ -443,17 +536,53 @@ function playBellSound(frequency = CONFIG.BELL_FREQUENCY, duration = CONFIG.BELL
 
 function toggleWhiteNoise() {
   if (!state.audioContext) initAudioContext();
-  if (!state.audioContext || !state.whiteNoiseGain) return;
+  if (!state.audioContext) return;
 
   state.isWhiteNoiseEnabled = !state.isWhiteNoiseEnabled;
 
   try {
     audioUtils.resumeContext();
-    const targetVolume = state.isWhiteNoiseEnabled ? CONFIG.WHITE_NOISE_VOLUME * CONFIG.VOLUME_LEVEL : 0;
-    audioUtils.setGainValue(state.whiteNoiseGain, targetVolume);
+    updateNoiseGains();
     domUtils.updateToggle(elements.whiteNoiseToggle, state.isWhiteNoiseEnabled);
   } catch (error) {
-    console.warn('Failed to toggle white noise:', error);
+    console.warn('Failed to toggle noise:', error);
+  }
+}
+
+function updateNoiseGains() {
+  const volumes = {
+    white: CONFIG.WHITE_NOISE_VOLUME,
+    pink: CONFIG.PINK_NOISE_VOLUME,
+    brown: CONFIG.BROWN_NOISE_VOLUME
+  };
+
+  const targetVolume = state.isWhiteNoiseEnabled ? (volumes[state.currentNoiseType] * state.noiseVolume) : 0;
+
+  // Set all noise gains to 0 first
+  if (state.whiteNoiseGain) audioUtils.setGainValue(state.whiteNoiseGain, 0);
+  if (state.pinkNoiseGain) audioUtils.setGainValue(state.pinkNoiseGain, 0);
+  if (state.brownNoiseGain) audioUtils.setGainValue(state.brownNoiseGain, 0);
+
+  // Then set the active noise type to target volume
+  if (state.isWhiteNoiseEnabled) {
+    switch(state.currentNoiseType) {
+      case 'white':
+        if (state.whiteNoiseGain) audioUtils.setGainValue(state.whiteNoiseGain, targetVolume);
+        break;
+      case 'pink':
+        if (state.pinkNoiseGain) audioUtils.setGainValue(state.pinkNoiseGain, targetVolume);
+        break;
+      case 'brown':
+        if (state.brownNoiseGain) audioUtils.setGainValue(state.brownNoiseGain, targetVolume);
+        break;
+    }
+  }
+}
+
+function changeNoiseType(type) {
+  state.currentNoiseType = type;
+  if (state.isWhiteNoiseEnabled) {
+    updateNoiseGains();
   }
 }
 
@@ -461,13 +590,77 @@ function toggleSound() {
   state.isSoundEnabled = !state.isSoundEnabled;
   domUtils.updateToggle(elements.soundToggle, state.isSoundEnabled);
 
-  // Turn off white noise if sound is disabled
+  // Turn off background noise if sound is disabled
   if (!state.isSoundEnabled && state.isWhiteNoiseEnabled) {
     state.isWhiteNoiseEnabled = false;
-    if (state.whiteNoiseGain) {
-      audioUtils.setGainValue(state.whiteNoiseGain, 0);
-    }
+    updateNoiseGains();
     domUtils.updateToggle(elements.whiteNoiseToggle, false);
+    updateNoiseControlsVisibility();
+  }
+}
+
+// Enhanced audio control functions
+function updateBellVolume() {
+  state.bellVolume = parseFloat(elements.bellVolume.value);
+  if (elements.bellVolumeValue) {
+    elements.bellVolumeValue.textContent = Math.round(state.bellVolume * 100) + '%';
+  }
+}
+
+function updateNoiseVolume() {
+  state.noiseVolume = parseFloat(elements.noiseVolume.value);
+  if (elements.noiseVolumeValue) {
+    elements.noiseVolumeValue.textContent = Math.round(state.noiseVolume * 200) + '%';
+  }
+  // Update the actual noise gain if noise is enabled
+  if (state.isWhiteNoiseEnabled) {
+    updateNoiseGains();
+  }
+}
+
+function updateNoiseType() {
+  state.currentNoiseType = elements.noiseType.value;
+  if (state.isWhiteNoiseEnabled) {
+    updateNoiseGains();
+  }
+}
+
+function updateNoiseControlsVisibility() {
+  const noiseControls = elements.noiseControls;
+  const noiseVolumeControl = elements.noiseVolumeControl;
+  
+  if (noiseControls && noiseVolumeControl) {
+    if (state.isWhiteNoiseEnabled) {
+      noiseControls.style.display = 'block';
+      noiseVolumeControl.style.display = 'block';
+    } else {
+      noiseControls.style.display = 'none';
+      noiseVolumeControl.style.display = 'none';
+    }
+  }
+}
+
+function setupAudioEventListeners() {
+  // Enhanced audio control event listeners
+  elements.soundToggle?.addEventListener('click', toggleSound);
+  elements.whiteNoiseToggle?.addEventListener('click', () => {
+    toggleWhiteNoise();
+    updateNoiseControlsVisibility();
+  });
+  
+  // Bell controls
+  elements.bellVolume?.addEventListener('input', updateBellVolume);
+  
+  // Noise controls
+  elements.noiseType?.addEventListener('change', updateNoiseType);
+  elements.noiseVolume?.addEventListener('input', updateNoiseVolume);
+  
+  // Initialize volume displays
+  if (elements.bellVolumeValue) {
+    elements.bellVolumeValue.textContent = Math.round(state.bellVolume * 100) + '%';
+  }
+  if (elements.noiseVolumeValue) {
+    elements.noiseVolumeValue.textContent = Math.round(state.noiseVolume * 200) + '%';
   }
 }
 
@@ -600,9 +793,15 @@ function stop() {
   clearInterval(state.timerIntervalId);
   elements.ball.classList.remove('breathe-glow');
   
-  // Stop white noise smoothly
+  // Stop all noise sources smoothly
   if (state.whiteNoiseGain && state.audioContext) {
     audioUtils.setGainValue(state.whiteNoiseGain, 0, 0.2);
+  }
+  if (state.pinkNoiseGain && state.audioContext) {
+    audioUtils.setGainValue(state.pinkNoiseGain, 0, 0.2);
+  }
+  if (state.brownNoiseGain && state.audioContext) {
+    audioUtils.setGainValue(state.brownNoiseGain, 0, 0.2);
   }
   
   updateStatusText('Select a pattern');
@@ -758,9 +957,11 @@ function init() {
   elements.patternSelect.addEventListener('change', handlePatternChange);
   elements.shareBtn.addEventListener('click', shareSession);
   
-  // Audio control event listeners
-  elements.soundToggle?.addEventListener('click', toggleSound);
-  elements.whiteNoiseToggle?.addEventListener('click', toggleWhiteNoise);
+  // Setup enhanced audio controls
+  setupAudioEventListeners();
+  
+  // Initialize audio control states
+  updateNoiseControlsVisibility();
   
   // Initialize pattern selection
   handlePatternChange();

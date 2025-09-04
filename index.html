@@ -138,7 +138,7 @@
                             </div>
                         </div>
                         
-                        <!-- Audio Controls -->
+                        <!-- Enhanced Audio Controls -->
                         <div class="w-full max-w-sm bg-slate-900/30 border border-slate-600/50 rounded-lg p-3 space-y-3">
                             <div class="flex items-center justify-between text-sm text-slate-300">
                                 <span>Audio Settings</span>
@@ -162,12 +162,46 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                                     </svg>
-                                    White Noise
+                                    Background Sounds
                                 </label>
                                 <button id="whiteNoiseToggle" type="button" role="switch" aria-pressed="false" 
                                         class="toggle-switch">
                                     <span class="toggle-thumb"></span>
                                 </button>
+                            </div>
+
+                            <!-- Noise Type Control -->
+                            <div class="space-y-2" id="noiseControls" style="display: none;">
+                                <label for="noiseType" class="text-xs text-slate-300 flex items-center gap-2">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Sound Type
+                                </label>
+                                <select id="noiseType" class="w-full bg-slate-800 border border-slate-600 text-slate-100 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                                    <option value="white">White Noise (Balanced)</option>
+                                    <option value="pink">Pink Noise (Natural)</option>
+                                    <option value="brown">Brown Noise (Deep)</option>
+                                </select>
+                            </div>
+
+                            <!-- Volume Controls -->
+                            <div class="space-y-3 pt-2 border-t border-slate-600/50">
+                                <div class="space-y-2">
+                                    <label for="bellVolume" class="text-xs text-slate-300">Bell Volume</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" id="bellVolume" min="0.1" max="1" value="0.7" step="0.1" class="flex-1 audio-slider">
+                                        <span id="bellVolumeValue" class="text-xs text-slate-400 w-8">70%</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2" id="noiseVolumeControl" style="display: none;">
+                                    <label for="noiseVolume" class="text-xs text-slate-300">Background Volume</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" id="noiseVolume" min="0.05" max="0.5" value="0.2" step="0.05" class="flex-1 audio-slider">
+                                        <span id="noiseVolumeValue" class="text-xs text-slate-400 w-8">40%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
