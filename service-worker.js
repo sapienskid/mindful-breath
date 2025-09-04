@@ -3,7 +3,7 @@
 // --- CONFIGURATION ---
 
 // Cache name: Increment this version number when you update assets.
-const CACHE_NAME = 'mindful-breath-timer-v9'; 
+const CACHE_NAME = 'mindful-breath-timer-v10'; 
 
 // App Shell: List of essential files for your app to work offline.
 const APP_SHELL_ASSETS = [
