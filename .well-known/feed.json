@@ -1,0 +1,29 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Mindful Breath Timer Updates",
+  "home_page_url": "https://breathe.pokharelsabin.com.np",
+  "feed_url": "https://breathe.pokharelsabin.com.np/.well-known/feed.json",
+  "description": "Updates and news about the Mindful Breath Timer breathing exercise application",
+  "icon": "https://breathe.pokharelsabin.com.np/icon.svg",
+  "favicon": "https://breathe.pokharelsabin.com.np/favicon.png",
+  "language": "en-US",
+  "authors": [
+    {
+      "name": "Sabin Pokharel",
+      "url": "https://pokharelsabin.com.np"
+    }
+  ],
+  "items": [
+    {
+      "id": "https://breathe.pokharelsabin.com.np/updates/v2.0",
+      "url": "https://breathe.pokharelsabin.com.np",
+      "title": "Enhanced Audio System Release",
+      "content_html": "<p>Major update with improved Tibetan bell sounds, multiple background noise types (white, pink, brown), and enhanced visual breathing guides.</p>",
+      "content_text": "Major update with improved Tibetan bell sounds, multiple background noise types (white, pink, brown), and enhanced visual breathing guides.",
+      "summary": "Enhanced audio system with traditional frequencies and multiple noise types",
+      "date_published": "2025-09-04T00:00:00Z",
+      "date_modified": "2025-09-04T00:00:00Z",
+      "tags": ["update", "audio", "enhancement"]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "subject": "https://breathe.pokharelsabin.com.np",
+  "aliases": [
+    "https://breathe.pokharelsabin.com.np",
+    "https://www.breathe.pokharelsabin.com.np"
+  ],
+  "properties": {
+    "https://schema.org/name": "Mindful Breath Timer",
+    "https://schema.org/description": "Free guided breathing timer with visual animations for stress relief and focus improvement",
+    "https://schema.org/url": "https://breathe.pokharelsabin.com.np",
+    "https://schema.org/sameAs": [
+      "https://github.com/sapienskid",
+      "https://pokharelsabin.com.np"
+    ]
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://breathe.pokharelsabin.com.np/.well-known/webfinger"
+    },
+    {
+      "rel": "canonical",
+      "href": "https://breathe.pokharelsabin.com.np"
+    },
+    {
+      "rel": "author",
+      "href": "https://pokharelsabin.com.np"
+    },
+    {
+      "rel": "license",
+      "href": "https://opensource.org/licenses/MIT"
+    }
+  ]
+}

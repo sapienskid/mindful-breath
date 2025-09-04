@@ -1,3 +1,27 @@
 User-agent: *
 Allow: /
-Sitemap: https://breath.pokharelsabin.com.np/sitemap.xml
+Allow: /public/
+Allow: /dist/
+Allow: /scripts/
+
+# Enhanced crawling directives
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://breathe.pokharelsabin.com.np/public/sitemap.xml
+
+# Additional sitemaps (if you add them later)
+# Sitemap: https://breathe.pokharelsabin.com.np/blog-sitemap.xml
+
+# Block unnecessary files
+Disallow: /*.log
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /.git/
+Disallow: /.env
+
+# Allow important files for SEO
+Allow: /favicon.png
+Allow: /icon.svg
+Allow: /public/manifest.webmanifest
+Allow: /service-worker.js

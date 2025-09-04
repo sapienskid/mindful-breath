@@ -1,13 +1,85 @@
 {
-  "name": "Mindful Breath Timer",
+  "name": "Mindful Breath Timer - Guided Breathing Exercises",
   "short_name": "Breath Timer",
-  "start_url": "/",
+  "description": "Free guided breathing timer with visual animations. Box breathing, 4-7-8 technique, custom patterns, and calming sounds for stress relief and focus improvement.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#000000",
-  "theme_color": "#000000",
-  "description": "Guided breathing timer with box, 4-7-8, and custom patterns.",
+  "theme_color": "#4f46e5",
+  "categories": ["health", "wellness", "lifestyle", "meditation"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/public/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Mindful Breath Timer main interface"
+    }
+  ],
   "icons": [
-    {"src": "/favicon.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "/favicon.png", "sizes": "512x512", "type": "image/png"}
-  ]
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "favicon"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Box Breathing",
+      "short_name": "Box Breath",
+      "description": "Quick start 4-4-4-4 box breathing pattern",
+      "url": "/?pattern=box&utm_source=shortcut",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Start 4-7-8 Breathing",
+      "short_name": "4-7-8 Breath",
+      "description": "Quick start relaxing 4-7-8 breathing pattern",
+      "url": "/?pattern=relax&utm_source=shortcut",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

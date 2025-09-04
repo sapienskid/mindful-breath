@@ -1,0 +1,54 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+Developer & Designer: Sabin Pokharel
+Site: https://pokharelsabin.com.np
+GitHub: https://github.com/sapienskid
+Location: Nepal
+
+# THANKS
+
+Breathing techniques research: Dr. Andrew Weil, Navy SEALs training protocols
+Audio engineering: Traditional Tibetan singing bowl research
+Design inspiration: Notion, Anthropic Claude interface
+Community: Open source meditation and wellness communities
+
+# TECHNOLOGY COLOPHON
+
+Languages: HTML5, CSS3, JavaScript ES6+
+Frameworks: TailwindCSS, Web Audio API, Service Workers
+Libraries: D3.js for SVG animations
+Tools: VS Code, Git, NPM
+Fonts: System fonts (Inter, SF Pro, Segoe UI)
+Standards: W3C Web Content Accessibility Guidelines (WCAG 2.1)
+
+# BUILD INFO
+
+Version: 2.0
+Last update: 2025/09/04
+Site: https://breathe.pokharelsabin.com.np
+Repository: https://github.com/sapienskid/mindful-breath
+License: MIT License
+
+# PURPOSE
+
+This application promotes mental wellness through guided breathing exercises.
+Free, open source, privacy-focused, and accessible to all.
+No tracking, no ads, no data collection.
+
+# BREATHING PATTERNS
+
+Box Breathing (4-4-4-4): Navy SEAL stress management technique
+4-7-8 Breathing: Dr. Andrew Weil's natural relaxation method
+Coherent Breathing: Heart rate variability optimization
+Triangle Breathing: Extended exhale for deep calming
+Custom Patterns: User-defined breathing rhythms
+
+# HEALTH & SAFETY
+
+This tool is for general wellness and stress reduction.
+Not a substitute for medical advice or treatment.
+Consult healthcare professionals for medical concerns.
+Stop if you experience dizziness or discomfort.

@@ -1,8 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  
+  <!-- Main Application Page -->
   <url>
-    <loc>https://breath.pokharelsabin.com.np</loc>
+    <loc>https://breathe.pokharelsabin.com.np</loc>
+    <lastmod>2025-09-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://breathe.pokharelsabin.com.np/public/og-image.png</image:loc>
+      <image:title>Mindful Breath Timer - Visual Breathing Exercise App</image:title>
+      <image:caption>Interactive breathing timer with visual animations for stress relief and focus improvement</image:caption>
+    </image:image>
   </url>
+  
+  <!-- PWA Manifest -->
+  <url>
+    <loc>https://breathe.pokharelsabin.com.np/public/manifest.webmanifest</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- Service Worker -->
+  <url>
+    <loc>https://breathe.pokharelsabin.com.np/service-worker.js</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.2</priority>
+  </url>
+
 </urlset>
